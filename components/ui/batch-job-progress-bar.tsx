@@ -2,7 +2,7 @@ import React from 'react'
 import { SegmentedProgressBar } from './segmented-progress-bar'
 import { cn } from "@/lib/utils"
 
-export type BatchJobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'OPEN' | 'CLOSED'
+export type BatchJobStatus = 'PROCESSING' | 'PROCESSED' | 'COMPLETED' | 'ERROR' | 'OPEN' | 'CLOSED'
 
 interface BatchJobProgressBarProps {
   status: BatchJobStatus
@@ -17,6 +17,7 @@ const statusToProgressState = (status: BatchJobStatus) => {
       return 'closed'
     case 'processing':
     case 'created':
+    case 'processed':
       return 'processing'
     case 'completed':
       return 'complete'

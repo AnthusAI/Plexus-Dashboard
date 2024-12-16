@@ -61,8 +61,8 @@ function getStatusDisplay(status: string): { text: string; variant: string } {
   const statusMap: Record<string, { text: string; variant: string }> = {
     PENDING: { text: 'Pending', variant: 'secondary' },
     RUNNING: { text: 'Running', variant: 'secondary' },
-    COMPLETED: { text: 'success', variant: 'success' },
-    FAILED: { text: 'Failed', variant: 'destructive' },
+    COMPLETED: { text: 'Completed', variant: 'success' },
+    ERROR: { text: 'Error', variant: 'destructive' },
     CANCELED: { text: 'Canceled', variant: 'secondary' },
   }
   return statusMap[normalizedStatus] || { text: status, variant: 'secondary' }
@@ -121,11 +121,11 @@ export default function BatchJobTask({
         
         if (linksResult.data) {
           // Get all scoring job IDs
-          const scoringJobIds = linksResult.data.map(link => link.scoringJobId);
+          const scoringJobIds = linksResult.data.map((link: BatchJobScoringJobModel) => link.scoringJobId);
           
           // Then update the Promise.all section
           const jobsResult = await Promise.all(
-            scoringJobIds.map(async id => {
+            scoringJobIds.map(async (id: string) => {
               const result = await getFromModel('ScoringJob', id);
               return result as ScoringJobResult;
             })
@@ -133,8 +133,8 @@ export default function BatchJobTask({
           
           // Filter out nulls and map to our format
           const validJobs = jobsResult
-            .filter(result => result.data)
-            .map(result => {
+            .filter((result: ScoringJobResult) => result.data)
+            .map((result: ScoringJobResult) => {
               const job = result.data!;
               return {
                 id: job.id,
@@ -241,7 +241,7 @@ export default function BatchJobTask({
     return () => {
       subscriptions.forEach(sub => sub.unsubscribe());
     };
-  }, [taskData.id]);
+  }, [taskData.id, task.time]);
 
   const progress = taskData.totalRequests ? 
     Math.round((taskData.completedRequests / taskData.totalRequests) * 100) : 0;

@@ -81,7 +81,7 @@ async function listAccounts(): Promise<SimpleResponse<SimpleAccount[]>> {
       }
     });
     return { 
-      data: result.data?.map(account => ({
+      data: result.data?.map((account: Schema['Account']['type']) => ({
         id: account.id as string,
         name: account.name as string,
         key: account.key as string
@@ -100,9 +100,16 @@ async function listBatchJobs(accountId: string): Promise<SimpleResponse<SimpleBa
         accountId: { eq: accountId }
       }
     });
+
+    console.log('Raw batch jobs result:', result);
+
+    const validJobs = (result.data || []).filter((job: Schema['BatchJob']['type']) => job && typeof job === 'object');
+    
     return { 
-      data: result.data?.map(job => ({
-        ...job,
+      data: validJobs.map((job: Schema['BatchJob']['type']) => ({
+        id: job.id || '',
+        type: job.type || '',
+        status: job.status || '',
         startedAt: (job.startedAt as string) || null,
         estimatedEndAt: (job.estimatedEndAt as string) || null,
         completedAt: (job.completedAt as string) || null,
@@ -114,8 +121,13 @@ async function listBatchJobs(accountId: string): Promise<SimpleResponse<SimpleBa
         failedRequests: (job.failedRequests as number) || null,
         scorecardId: (job.scorecardId as string) || null,
         scoreId: (job.scoreId as string) || null,
-        scoringJobCountCache: (job.scoringJobCountCache as number) || null
-      })) || null 
+        scoringJobCountCache: (job.scoringJobCountCache as number) || null,
+        accountId: job.accountId || '',
+        modelProvider: job.modelProvider || '',
+        modelName: job.modelName || '',
+        createdAt: job.createdAt || new Date().toISOString(),
+        updatedAt: job.updatedAt || new Date().toISOString()
+      }))
     };
   } catch (error) {
     console.error('Error listing batch jobs:', error);
@@ -731,8 +743,8 @@ export default function BatchesDashboard() {
               task={{
                 id: selectedBatchJob.id,
                 type: selectedBatchJob.type,
-                scorecard: '',
-                score: '',
+                scorecard: selectedBatchJob.scorecard?.name || '',
+                score: selectedBatchJob.score?.name || '',
                 time: selectedBatchJob.completedAt || selectedBatchJob.startedAt || new Date().toISOString(),
                 summary: `${getProgressPercentage(selectedBatchJob)}% complete`,
                 description: selectedBatchJob.errorMessage || undefined,
@@ -753,6 +765,7 @@ export default function BatchesDashboard() {
                   scoringJobs: []
                 }
               }}
+              key={`${selectedBatchJob.id}-${selectedBatchJob.updatedAt}`}
               isFullWidth={isFullWidth}
               onToggleFullWidth={() => setIsFullWidth(!isFullWidth)}
               onClose={handleBatchJobClose}
